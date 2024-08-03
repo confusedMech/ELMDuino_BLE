@@ -1,6 +1,7 @@
 #pragma once
-#include <Arduino.h>
+#include "Arduino.h"
 #include "ELMduino.h"
+
 /**
  * A BLE client example to receive many characteristics.
  * There is a lot new capabilities implemented.
@@ -11,7 +12,7 @@
  */
 
 #include "BLEDevice.h"
-//#include "BLEScan.h"
+// #include "BLEScan.h"
 
 // Define UUIDs:
 static BLEUUID serviceUUID(BLEUUID((uint16_t)0xfff0));
@@ -24,49 +25,59 @@ static boolean connected = false;
 static boolean doScan = false;
 
 // Define pointer for the BLE connection
-static BLEAdvertisedDevice* myDevice;
-BLERemoteCharacteristic* pRemoteChar_TX;
-BLERemoteCharacteristic* pRemoteChar_RX;
+static BLEAdvertisedDevice *myDevice;
+static BLERemoteCharacteristic *pRemoteChar_TX;
+static BLERemoteCharacteristic *pRemoteChar_RX;
 
-static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify);
+static void notifyCallback(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);
 bool connectToServer();
-bool connectCharacteristic(BLERemoteService* pRemoteService, BLERemoteCharacteristic* l_BLERemoteChar);
-void sendStartCommand(const char* cmd);
-void sendCommand(uint8_t cmd);
+bool connectCharacteristic(BLERemoteService *pRemoteService, BLERemoteCharacteristic *l_BLERemoteChar);
+void sendStartCommand(const uint8_t(*cmd), int cmdSize);
+
+// void sendCommand(const uint8_t cmd);
 
 // Callback function that is called whenever a client is connected or disconnected
-class MyClientCallback : public BLEClientCallbacks {
-  void onConnect(BLEClient* pclient) {
+class MyClientCallback : public BLEClientCallbacks
+{
+  void onConnect(BLEClient *pclient)
+  {
   }
-  void onDisconnect(BLEClient* pclient) {
+  void onDisconnect(BLEClient *pclient)
+  {
     connected = false;
     Serial.println("onDisconnect");
   }
 };
 
 // Scan for BLE servers and find the first one that advertises the service we are looking for.
-class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
-  //Called for each advertising BLE server.
-  void onResult(BLEAdvertisedDevice advertisedDevice) {
+class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
+{
+  // Called for each advertising BLE server.
+  void onResult(BLEAdvertisedDevice advertisedDevice)
+  {
     Serial.print("BLE Advertised Device found: ");
     Serial.println(advertisedDevice.toString().c_str());
 
     // We have found a device, let us now see if it contains the service we are looking for.
-    if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID)) {
+    if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID))
+    {
 
       BLEDevice::getScan()->stop();
       myDevice = new BLEAdvertisedDevice(advertisedDevice);
       doConnect = true;
       doScan = true;
 
-    }  // Found our server
-  }    // onResult
-};     // MyAdvertisedDeviceCallbacks
+    } // Found our server
+  } // onResult
+}; // MyAdvertisedDeviceCallbacks
 
-ELM327 myELM327;
+// ELM327 myELM327;
 
 #define ELM_PORT elmWork
-volatile bool readChar_0 = false;
+static volatile bool readChar_0 = false;
 const uint8_t delimit[] = {0x0D};
-const uint8_t modInfo[] = {'A','T','I', 0x0D };
-String rxValue, txValue;
+const uint8_t modInfo[] = {'A', 'T', 'R', 'V'};
+const uint8_t engineloads1[] = {'1'};
+const uint8_t engineloads2[] = {'1','2'};
+const uint8_t engineloads3[] = {'1'};
+static String rxValue, txValue;
