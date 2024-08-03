@@ -116,19 +116,20 @@ void loop()
     {
       Serial.println("We are now connected to the BLE Server.");
       // initalize BLE server
-      sendStartCommand(SET_ALL_TO_DEFAULTS);
+
+      sendStartCommand(SET_ALL_TO_DEFAULTS, sizeof(SET_ALL_TO_DEFAULTS)); // ATD
       delay(100);
 
-      sendStartCommand(RESET_ALL);
+      sendStartCommand(RESET_ALL, sizeof(RESET_ALL)); // ATZ
       delay(100);
 
-      sendStartCommand(ECHO_OFF);
+      // sendStartCommand(ECHO_OFF, sizeof(ECHO_OFF)); // ATE0
       delay(100);
 
-      sendStartCommand(PRINTING_SPACES_OFF);
+      //  sendStartCommand(PRINTING_SPACES_OFF, sizeof(PRINTING_SPACES_OFF)); //ATS0
       delay(100);
 
-      sendStartCommand(ALLOW_LONG_MESSAGES);
+      sendStartCommand(ALLOW_LONG_MESSAGES, sizeof(ALLOW_LONG_MESSAGES)); // ATAL
       delay(100);
     }
     else
@@ -142,10 +143,32 @@ void loop()
   // with the current time since boot.
   if (connected)
   {
-    sendCommand(CONTROL_MODULE_VOLTAGE);
+     delay(100);
+    pRemoteChar_RX->writeValue((uint8_t *)modInfo, sizeof(modInfo), true);
+    delay(100);
+    pRemoteChar_RX->writeValue((uint8_t *)delimit, sizeof(delimit), true);
+
+    delay(3000);
     txValue = pRemoteChar_TX->readValue().c_str();
-    Serial.println(" \tFound TX characteristic with value:" + txValue);
-    delay(5000);
+    Serial.print(" \tFound with value:\t ");
+    Serial.println(txValue);
+    delay(1000);
+
+    pRemoteChar_RX->writeValue((uint8_t *)engineloads1, sizeof(engineloads1), true);
+    delay(100);
+        pRemoteChar_RX->writeValue((uint8_t *)engineloads2, sizeof(engineloads2), true);
+    delay(100);
+        pRemoteChar_RX->writeValue((uint8_t *)engineloads3, sizeof(engineloads3), true);
+    delay(100);
+    pRemoteChar_RX->writeValue((uint8_t *)delimit, sizeof(delimit), true);
+
+    delay(3000);
+    txValue = pRemoteChar_TX->readValue().c_str();
+    delay(100);
+    Serial.print(" \tFound RPM value:\t ");
+    Serial.println(txValue);
+    delay(1000);
+
   }
   else if (doScan)
   {
@@ -153,20 +176,21 @@ void loop()
   }
 }
 
-void sendStartCommand(const char *cmd)
+void sendStartCommand(const uint8_t(*cmd), int cmdSize)
 {
-  pRemoteChar_RX->writeValue((uint8_t *)(cmd), sizeof(cmd), true);
-  pRemoteChar_RX->writeValue((uint8_t *)delimit, sizeof(delimit), true);
-  delay(100);
-  txValue = pRemoteChar_TX->readValue().c_str();
-  Serial.println(" Found TX characteristic with value: " + txValue);
-}
 
-
-{
-  pRemoteChar_RX->writeValue((uint8_t *)cmd1, sizeof(cmd1), true);
-  pRemoteChar_RX->writeValue((uint8_t *)delimit, sizeof(delimit), true);
+  // pRemoteChar_RX->writeValue((uint8_t *)delimit, sizeof(delimit), true);
+  pRemoteChar_RX->writeValue((uint8_t *)cmd, cmdSize, true);
   delay(100);
-  txValue = pRemoteChar_TX->readValue().c_str();
-  Serial.println(" Found TX characteristic with value: " + txValue);
+  pRemoteChar_RX->writeValue((uint8_t *)delimit, sizeof(delimit), true);
+
+  Serial.println("Checking if readable");
+  if (pRemoteChar_TX->canRead())
+  {
+    txValue = pRemoteChar_TX->readValue().c_str();
+    Serial.println("is readable");
+    Serial.println(" Found TX characteristic with value: " + txValue);
+  }
+
+  delay(1000);
 }
